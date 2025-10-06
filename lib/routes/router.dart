@@ -1,3 +1,4 @@
+import '../resources/pages/photo_detail_page.dart';
 import '/resources/pages/not_found_page.dart';
 import '/resources/pages/home_page.dart';
 import 'package:nylo_framework/nylo_framework.dart';
@@ -22,15 +23,7 @@ import 'package:nylo_framework/nylo_framework.dart';
 appRouter() => nyRoutes((router) {
       router.add(HomePage.path).initialRoute();
 
-      // Add your routes here ...
-      // router.add(NewPage.path, transitionType: TransitionType.fade());
+      router.add(PhotoDetailPage.path);
 
-      // Example using grouped routes
-      // router.group(() => {
-      //   "route_guards": [AuthRouteGuard()],
-      //   "prefix": "/dashboard"
-      // }, (router) {
-      //
-      // });
       router.add(NotFoundPage.path).unknownRoute();
 });

@@ -1,18 +1,28 @@
+import 'package:flutter_app/app/models/user_profile_image.dart';
 import 'package:nylo_framework/nylo_framework.dart';
 
 class User extends Model {
+  String? id;
   String? name;
-  String? email;
+  String? username;
+  UserProfileImage? profileImage;
 
-  static StorageKey key = 'user';
-
-  User() : super(key: key);
+  User({this.id, this.name, this.username, this.profileImage});
 
   User.fromJson(dynamic data) {
+    id = data['id'];
     name = data['name'];
-    email = data['email'];
+    username = data['username'];
+    if (data['profile_image'] != null) {
+      profileImage = UserProfileImage.fromJson(data['profile_image']);
+    }
   }
 
   @override
-  toJson() => {"name": name, "email": email};
+  toJson() => {
+    "id": id,
+    "name": name,
+    "username": username,
+    "profile_image": profileImage?.toJson(),
+  };
 }
