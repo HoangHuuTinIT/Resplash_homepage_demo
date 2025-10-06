@@ -75,6 +75,9 @@ class _HomePageState extends NyPage<HomePage> {
           centerTitle: true,
           backgroundColor: Color(0xFFFFFFFF),
           bottom: TabBar(
+            labelColor: Colors.black,
+            indicatorColor: Colors.black,
+            indicatorSize: TabBarIndicatorSize.tab,
             tabs: [
               Tab(text: "HOME"),
               Tab(text: "COLLECTIONS"),
@@ -144,37 +147,53 @@ class _HomePageState extends NyPage<HomePage> {
             ),
           ),
         ),
-        floatingActionButton: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          height: _showBottomNavBar ? 56.0 : 0.0,
+// ... các phần khác trong Scaffold giữ nguyên
+
+        floatingActionButton: Transform.scale(
+          // Dùng Transform.scale để ẩn/hiện nút mà không làm hỏng layout
+          scale: _showBottomNavBar ? 1.0 : 0.0,
           child: FloatingActionButton(
             onPressed: () {},
             backgroundColor: Colors.black,
-            shape: const CircleBorder(), // ✅ đảm bảo nút tròn tuyệt đối
-            elevation: _showBottomNavBar ? 6.0 : 0.0,
+            shape: const CircleBorder(),
+            elevation: 6.0, // Giữ elevation cố định hoặc cũng có thể thay đổi
             child: const Icon(Icons.add, color: Colors.white),
           ),
         ),
-
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         bottomNavigationBar: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
+          // Giữ nguyên animation cho BottomAppBar
           height: _showBottomNavBar ? 60.0 : 0.0,
           child: BottomAppBar(
             shape: const CircularNotchedRectangle(),
             notchMargin: 6.0,
+            // Thêm clipBehavior để nội dung không bị tràn ra ngoài khi animation
+            clipBehavior: Clip.antiAlias,
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
-                const Spacer(),
-                IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-                IconButton(icon: const Icon(Icons.sort), onPressed: () {}),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
+                    IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(icon: const Icon(Icons.sort), onPressed: () {}),
+                    // Thêm một IconButton nữa nếu bạn muốn cân bằng
+                    // IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
+                  ],
+                )
               ],
             ),
           ),
         ),
 
-
+// ...
       ),
     );
   }

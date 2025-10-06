@@ -150,23 +150,32 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
   }
 
   // SỬA ĐỔI: Sử dụng bố cục 3 hàng, 2 cột theo yêu cầu của bạn
-  Widget _buildAllInfo(BuildContext context, Photo photo ) {
+  Widget _buildAllInfo(BuildContext context, Photo photo) {
     final exif = photo.exif;
+
+    // Hàm helper để định dạng giá trị
+    String formatValue(String? value, {String prefix = "", String suffix = ""}) {
+      if (value == null || value.isEmpty) {
+        return "Unknown";
+      }
+      return "$prefix$value$suffix";
+    }
+
     return Column(
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(child: _buildStatItem("Camera", exif?.model ?? "Unknown", align: CrossAxisAlignment.start)),
-            Expanded(child: _buildStatItem("Aperture", "f/${exif?.aperture ?? 'Unknown'}", align: CrossAxisAlignment.start)),
+            Expanded(child: _buildStatItem("Aperture", formatValue(exif?.aperture, prefix: "f/"), align: CrossAxisAlignment.start)),
           ],
         ),
         SizedBox(height: 16),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _buildStatItem("Focal Length", "${exif?.focalLength ?? 'Unknown'}mm", align: CrossAxisAlignment.start)),
-            Expanded(child: _buildStatItem("Shutter Speed", "${exif?.exposureTime ?? 'Unknown'}s", align: CrossAxisAlignment.start)),
+            Expanded(child: _buildStatItem("Focal Length", formatValue(exif?.focalLength, suffix: "mm"), align: CrossAxisAlignment.start)),
+            Expanded(child: _buildStatItem("Shutter Speed", formatValue(exif?.exposureTime, suffix: "s"), align: CrossAxisAlignment.start)),
           ],
         ),
         SizedBox(height: 16),
