@@ -13,12 +13,15 @@ class Photo extends Model {
   int? views;
   PhotoExif? exif;
   List<Tag>? tags;
-
+  int? width;
+  int? height;
   Photo(
       {this.id,
         this.description,
         this.urls,
         this.user,
+        this.width,
+        this.height,
         this.likes,
         this.downloads,
         this.views,
@@ -27,6 +30,8 @@ class Photo extends Model {
 
   Photo.fromJson(dynamic data) {
     id = data['id'];
+    width = data['width'];
+    height = data['height'];
     description = data['description'];
     likes = data['likes'];
     downloads = data['downloads'];
@@ -49,6 +54,8 @@ class Photo extends Model {
   @override
   toJson() => {
     "id": id,
+    "width": width,
+    "height": height,
     "description": description,
     "likes": likes,
     "downloads": downloads,

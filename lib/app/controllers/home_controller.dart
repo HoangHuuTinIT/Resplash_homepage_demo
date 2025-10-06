@@ -5,16 +5,22 @@ import 'controller.dart';
 
 class HomeController extends Controller {
   List<Photo> photos = [];
+  int _page = 1;
 
-  // Hàm này sẽ được gọi từ HomePage để lấy dữ liệu ban đầu
   Future<void> fetchInitialPhotos() async {
-    photos = await api<ApiService>((request) => request.fetchPhotos()) ?? [];
+    _page = 1;
+    photos = await api<ApiService>((request) => request.fetchPhotos(page: _page)) ?? [];
+  }
+
+  Future<void> fetchMorePhotos() async {
+    _page++;
+    List<Photo>? newPhotos = await api<ApiService>((request) => request.fetchPhotos(page: _page));
+    if (newPhotos != null && newPhotos.isNotEmpty) {
+      photos.addAll(newPhotos);
+    }
   }
 
   Future<void> onRefresh() async {
-    // Gọi API để lấy dữ liệu mới khi người dùng kéo để làm mới
-    photos =
-        await api<ApiService>((request) => request.fetchPhotos(perPage: 30)) ??
-            [];
+    await fetchInitialPhotos();
   }
 }

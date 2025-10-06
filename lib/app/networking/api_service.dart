@@ -29,7 +29,7 @@ class ApiService extends NyApiService {
           "per_page": perPage,
         },
       ),
-      // Cache the response for 1 hour to avoid excessive API calls
+      cacheKey: "photos_page_$page",
       cacheDuration: Duration(hours: 1),
     );
   }
@@ -42,7 +42,7 @@ class ApiService extends NyApiService {
           "client_id": getEnv('UNSPLASH_ACCESS_KEY'),
         },
       ),
-      // Cache the response for 1 hour
+      cacheKey: "photo_details_$photoId",
       cacheDuration: Duration(hours: 1),
     );
   }

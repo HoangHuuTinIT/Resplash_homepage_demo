@@ -14,18 +14,13 @@ class PhotoDetailPage extends NyStatefulWidget<PhotoDetailPageController> {
 class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
   @override
   get init => () async {
-    // Lấy dữ liệu được truyền từ HomePage và gọi controller để xử lý
     await widget.controller.fetchDetails(widget.data());
   };
 
-  /// SỬA LỖI: Đổi tên 'afterLoad()' thành 'view(BuildContext context)'
-  /// Đây là phương thức đúng để xây dựng UI trong NyPage
   @override
   Widget view(BuildContext context) {
     final Photo? photo = widget.controller.photo;
     if (photo == null) {
-      // Nylo sẽ hiển thị màn hình loading mặc định trong khi init chạy,
-      // nhưng chúng ta vẫn nên kiểm tra null để phòng trường hợp API lỗi.
       return Scaffold(
         appBar: AppBar(),
         body: Center(child: Text("Không tìm thấy ảnh hoặc có lỗi xảy ra")),
@@ -33,75 +28,55 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
     }
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 300.0,
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Image.network(
-                photo.urls?.regular ?? "",
-                fit: BoxFit.cover,
-                // Thêm frameBuilder để có hiệu ứng mờ dần đẹp mắt khi ảnh tải
-                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                  if (wasSynchronouslyLoaded) return child;
-                  return AnimatedOpacity(
-                    opacity: frame == null ? 0 : 1,
-                    duration: const Duration(seconds: 1),
-                    curve: Curves.easeOut,
-                    child: child,
-                  );
-                },
-              ),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: BackButton(color: Colors.black),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.share_outlined, color: Colors.black),
+            onPressed: () {},
+          )
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Image.network(
+              photo.urls?.regular ?? "",
+              height: 400,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                if (wasSynchronouslyLoaded) return child;
+                return AnimatedOpacity(
+                  opacity: frame == null ? 0 : 1,
+                  duration: const Duration(seconds: 1),
+                  curve: Curves.easeOut,
+                  child: child,
+                );
+              },
             ),
-            actions: [
-              IconButton(
-                icon: Icon(Icons.share),
-                onPressed: () {},
-              )
-            ],
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
+            Padding(
+              padding:
+              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildUserInfo(context, photo),
-                  SizedBox(height: 24),
+                  Divider(height: 40, thickness: 1),
+                  _buildAllInfo(context, photo),
+                  Divider(height: 40, thickness: 1),
                   _buildPhotoStats(context, photo),
-                  SizedBox(height: 24),
-                  _buildExifInfo(context, photo),
                   SizedBox(height: 24),
                   _buildTags(context, photo),
                   SizedBox(height: 32),
-                  Center(
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        // API không trả về trường "links", tạm thời hardcode
-                        final Uri url =
-                        Uri.parse("https://unsplash.com/photos/${photo.id}");
-                        if (!await launchUrl(url)) {
-                          showToastOops(description: 'Could not launch $url');
-                        }
-                      },
-                      icon: Icon(Icons.wallpaper),
-                      label: Text("SET AS WALLPAPER"),
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30.0),
-                        ),
-                      ),
-                    ),
-                  )
+                  _buildWallpaperButton(photo),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -110,26 +85,66 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
     return Row(
       children: [
         CircleAvatar(
-          radius: 24,
-          backgroundImage: NetworkImage(photo.user?.profileImage?.medium ?? ""),
+          radius: 20,
+          backgroundImage:
+          NetworkImage(photo.user?.profileImage?.medium ?? ""),
         ),
-        SizedBox(width: 16),
+        SizedBox(width: 12),
         Expanded(
           child: Text(
             photo.user?.name ?? "Unknown",
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
         ),
-        IconButton(icon: Icon(Icons.download_outlined), onPressed: () {}),
-        IconButton(icon: Icon(Icons.favorite_border), onPressed: () {}),
-        IconButton(icon: Icon(Icons.bookmark_border), onPressed: () {}),
+        IconButton(
+            icon: Icon(Icons.download_outlined, color: Colors.black54),
+            onPressed: () {}),
+        IconButton(
+            icon: Icon(Icons.favorite_border, color: Colors.black54),
+            onPressed: () {}),
+        IconButton(
+            icon: Icon(Icons.bookmark_border, color: Colors.black54),
+            onPressed: () {}),
+      ],
+    );
+  }
+  Widget _buildAllInfo(BuildContext context, Photo photo) {
+    final exif = photo.exif;
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildStatItem("Camera", exif?.model ?? "N/A"),
+            _buildStatItem("Aperture", "f/${exif?.aperture ?? 'N/A'}"),
+          ],
+        ),
+        SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildStatItem("Focal Length", "${exif?.focalLength ?? 'N/A'}mm"),
+            _buildStatItem("Shutter Speed", "${exif?.exposureTime ?? 'N/A'}s"),
+          ],
+        ),
+        SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildStatItem("ISO", (exif?.iso ?? 0).toString()),
+            _buildStatItem("Dimensions", "${photo.width ?? ''} x ${photo.height ?? ''}"),
+          ],
+        )
       ],
     );
   }
 
   Widget _buildPhotoStats(BuildContext context, Photo photo) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildStatItem("Views", (photo.views ?? 0).toString()),
         _buildStatItem("Downloads", (photo.downloads ?? 0).toString()),
@@ -138,47 +153,66 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
     );
   }
 
-  Widget _buildExifInfo(BuildContext context, Photo photo) {
-    final exif = photo.exif;
-    if (exif == null) return SizedBox.shrink();
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        Expanded(child: _buildStatItem("Camera", exif.model ?? "N/A")),
-        Expanded(
-            child: _buildStatItem("Aperture", "f/${exif.aperture ?? 'N/A'}")),
-        Expanded(
-            child: _buildStatItem(
-                "Focal Length", "${exif.focalLength ?? 'N/A'}mm")),
-        Expanded(
-            child: _buildStatItem(
-                "Shutter Speed", "${exif.exposureTime ?? 'N/A'}s")),
-        Expanded(child: _buildStatItem("ISO", (exif.iso ?? 0).toString())),
-      ],
-    );
-  }
-
   Widget _buildTags(BuildContext context, Photo photo) {
     if (photo.tags == null || photo.tags!.isEmpty) return SizedBox.shrink();
-    return Wrap(
-      spacing: 8.0,
-      runSpacing: 4.0,
-      children: photo.tags!
-          .map((tag) => Chip(label: Text(tag.title?.capitalize() ?? "")))
-          .toList(),
+    return Container(
+      height: 35,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: photo.tags!
+              .map((tag) => Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Chip(
+              label: Text(tag.title?.capitalize() ?? ""),
+              backgroundColor: Colors.grey[200],
+              shape: StadiumBorder(),
+            ),
+          ))
+              .toList(),
+        ),
+      ),
     );
   }
 
   Widget _buildStatItem(String label, String value) {
     return Column(
       children: [
+        Text(label,
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: Colors.grey[600])),
+        SizedBox(height: 4),
         Text(value,
             style: Theme.of(context)
                 .textTheme
                 .titleMedium
                 ?.copyWith(fontWeight: FontWeight.bold)),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );
   }
+
+  Widget _buildWallpaperButton(Photo photo) {
+    return Center(
+      child: ElevatedButton.icon(
+        onPressed: () async {
+          final Uri url = Uri.parse("https://unsplash.com/photos/${photo.id}");
+          if (!await launchUrl(url)) {
+            showToastOops(description: 'Could not launch $url');
+          }
+        },
+        icon: Icon(Icons.wallpaper, color: Colors.white),
+        label: Text("SET AS WALLPAPER", style: TextStyle(color: Colors.white)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.black,
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+        ),
+      ),
+    );
+  }
+
 }

@@ -17,8 +17,9 @@ class _HomePageState extends NyPage<HomePage> {
 
   @override
   get init => () async {
-    // Gọi hàm fetch dữ liệu từ controller khi trang được khởi tạo
-    await widget.controller.fetchInitialPhotos();
+    if (widget.controller.photos.isEmpty) {
+      await widget.controller.fetchInitialPhotos();
+    }
   };
 
   @override
@@ -27,8 +28,8 @@ class _HomePageState extends NyPage<HomePage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(getEnv("APP_NAME")),
           centerTitle: true,
+          backgroundColor: Color(0xFFFFFFFF),
           bottom: TabBar(
             tabs: [
               Tab(text: "HOME"),
@@ -39,27 +40,36 @@ class _HomePageState extends NyPage<HomePage> {
         body: SafeAreaWidget(
           child: SmartRefresher(
             controller: _refreshController,
+            enablePullUp: true,
             onRefresh: () async {
               await widget.controller.onRefresh();
               setState(() {});
               _refreshController.refreshCompleted();
             },
+            onLoading: () async {
+              await widget.controller.fetchMorePhotos();
+              setState(() {});
+              _refreshController.loadComplete();
+            },
             child: ListView.builder(
               itemCount: widget.controller.photos.length,
               itemBuilder: (context, index) {
                 final photo = widget.controller.photos[index];
-                return InkWell(
-                  onTap: () => routeTo('/photo-detail', data: photo),
-                  child: Card(
-                    clipBehavior: Clip.antiAlias,
-                    margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+
+                final double aspectRatio = (photo.width != null && photo.height != null && photo.height! > 0)
+                    ? photo.width! / photo.height!
+                    : 16 / 9;
+
+                return Padding(
+                  padding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  child: InkWell(
+                    onTap: () => routeTo('/photo-detail', data: photo),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.all(12.0),
+                          padding: const EdgeInsets.only(bottom: 12.0),
                           child: Row(
                             children: [
                               CircleAvatar(
@@ -78,11 +88,15 @@ class _HomePageState extends NyPage<HomePage> {
                             ],
                           ),
                         ),
-                        Image.network(
-                          photo.urls?.regular ?? "",
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: 300,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12.0),
+                          child: AspectRatio(
+                            aspectRatio: aspectRatio,
+                            child: Image.network(
+                              photo.urls?.small ?? "",
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -94,7 +108,8 @@ class _HomePageState extends NyPage<HomePage> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {},
-          child: Icon(Icons.add),
+          backgroundColor: Colors.black,
+          child: Icon(Icons.add, color: Colors.white),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         bottomNavigationBar: BottomAppBar(
@@ -104,7 +119,7 @@ class _HomePageState extends NyPage<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
               IconButton(icon: Icon(Icons.menu), onPressed: () {}),
-              SizedBox(width: 48), // Khoảng trống cho FAB
+              SizedBox(width: 48),
               IconButton(icon: Icon(Icons.search), onPressed: () {}),
             ],
           ),
