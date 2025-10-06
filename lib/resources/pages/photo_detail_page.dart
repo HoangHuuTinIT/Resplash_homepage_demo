@@ -111,31 +111,33 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
       ],
     );
   }
+
   Widget _buildAllInfo(BuildContext context, Photo photo) {
     final exif = photo.exif;
     return Column(
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildStatItem("Camera", exif?.model ?? "N/A"),
-            _buildStatItem("Aperture", "f/${exif?.aperture ?? 'N/A'}"),
+            Expanded(child: _buildStatItem("Camera", exif?.model ?? "N/A", align: CrossAxisAlignment.start)),
+            Expanded(child: _buildStatItem("Aperture", "f/${exif?.aperture ?? 'N/A'}", align: CrossAxisAlignment.start)),
+
           ],
         ),
         SizedBox(height: 16),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildStatItem("Focal Length", "${exif?.focalLength ?? 'N/A'}mm"),
-            _buildStatItem("Shutter Speed", "${exif?.exposureTime ?? 'N/A'}s"),
+            Expanded(child: _buildStatItem("Focal Length", "${exif?.focalLength ?? 'N/A'}mm", align: CrossAxisAlignment.start)),
+            Expanded(child: _buildStatItem("Shutter Speed", "${exif?.exposureTime ?? 'N/A'}s", align: CrossAxisAlignment.start)),
           ],
         ),
         SizedBox(height: 16),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildStatItem("ISO", (exif?.iso ?? 0).toString()),
-            _buildStatItem("Dimensions", "${photo.width ?? ''} x ${photo.height ?? ''}"),
+            Expanded(child: _buildStatItem("ISO", (exif?.iso ?? 0).toString(), align: CrossAxisAlignment.start)),
+            Expanded(child: _buildStatItem("Dimensions", "${photo.width ?? ''}x${photo.height ?? ''}", align: CrossAxisAlignment.start)),
           ],
         )
       ],
@@ -167,6 +169,8 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
               label: Text(tag.title?.capitalize() ?? ""),
               backgroundColor: Colors.grey[200],
               shape: StadiumBorder(),
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
           ))
               .toList(),
@@ -175,26 +179,31 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatItem(String label, String value, {CrossAxisAlignment align = CrossAxisAlignment.center}) {
     return Column(
+      crossAxisAlignment: align,
       children: [
-        Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: Colors.grey[600])),
+        Text(
+          label,
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: Colors.grey[600]),
+        ),
         SizedBox(height: 4),
-        Text(value,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }
-
   Widget _buildWallpaperButton(Photo photo) {
-    return Center(
+    return Align(
+      alignment: Alignment.centerRight,
       child: ElevatedButton.icon(
         onPressed: () async {
           final Uri url = Uri.parse("https://unsplash.com/photos/${photo.id}");
@@ -208,11 +217,10 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
           backgroundColor: Colors.black,
           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
+            borderRadius: BorderRadius.circular(20.0),
           ),
         ),
       ),
     );
   }
-
 }

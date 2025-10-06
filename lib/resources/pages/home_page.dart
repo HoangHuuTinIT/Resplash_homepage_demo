@@ -14,13 +14,38 @@ class HomePage extends NyStatefulWidget<HomeController> {
 class _HomePageState extends NyPage<HomePage> {
   final RefreshController _refreshController =
   RefreshController(initialRefresh: false);
-
+  final ScrollController _scrollController = ScrollController();
   @override
   get init => () async {
     if (widget.controller.photos.isEmpty) {
       await widget.controller.fetchInitialPhotos();
     }
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.9) {
+      if (!widget.controller.isLoadingMore) {
+        widget.controller.fetchMorePhotos().then((_) {
+          if (mounted) {
+            setState(() {});
+          }
+        });
+      }
+    }
+  }
 
   @override
   Widget view(BuildContext context) {
@@ -40,18 +65,13 @@ class _HomePageState extends NyPage<HomePage> {
         body: SafeAreaWidget(
           child: SmartRefresher(
             controller: _refreshController,
-            enablePullUp: true,
             onRefresh: () async {
               await widget.controller.onRefresh();
               setState(() {});
               _refreshController.refreshCompleted();
             },
-            onLoading: () async {
-              await widget.controller.fetchMorePhotos();
-              setState(() {});
-              _refreshController.loadComplete();
-            },
             child: ListView.builder(
+              controller: _scrollController,
               itemCount: widget.controller.photos.length,
               itemBuilder: (context, index) {
                 final photo = widget.controller.photos[index];
