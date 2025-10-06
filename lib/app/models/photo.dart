@@ -3,6 +3,8 @@ import 'package:flutter_app/app/models/photo_urls.dart';
 import 'package:flutter_app/app/models/user.dart';
 import 'package:nylo_framework/nylo_framework.dart';
 
+import 'location.dart';
+
 class Photo extends Model {
   String? id;
   String? description;
@@ -15,6 +17,7 @@ class Photo extends Model {
   List<Tag>? tags;
   int? width;
   int? height;
+  Location? location;
   Photo(
       {this.id,
         this.description,
@@ -26,7 +29,9 @@ class Photo extends Model {
         this.downloads,
         this.views,
         this.exif,
-        this.tags});
+        this.tags,
+        this.location,
+      });
 
   Photo.fromJson(dynamic data) {
     id = data['id'];
@@ -49,6 +54,9 @@ class Photo extends Model {
     if (data['tags'] != null) {
       tags = List.from(data['tags']).map((t) => Tag.fromJson(t)).toList();
     }
+    if (data['location'] != null) {
+      location = Location.fromJson(data['location']);
+    }
   }
 
   @override
@@ -64,6 +72,7 @@ class Photo extends Model {
     "user": user?.toJson(),
     "exif": exif?.toJson(),
     "tags": tags?.map((t) => t.toJson()).toList(),
+    "location": location?.toJson(),
   };
 }
 

@@ -1,3 +1,4 @@
+import '../app/models/location.dart';
 import '/app/controllers/home_controller.dart';
 import '/app/controllers/photo_detail_page_controller.dart';
 import '/app/models/photo.dart';
@@ -14,7 +15,12 @@ final Map<Type, dynamic> modelDecoders = {
   Photo: (data) => Photo.fromJson(data),
   List<Photo>: (data) =>
       List.from(data).map((json) => Photo.fromJson(json)).toList(),
+
+  Location: (data) => Location.fromJson(data),
+  List<Location>: (data) =>
+      List.from(data).map((json) => Location.fromJson(json)).toList(),
 };
+
 
 final Map<Type, dynamic> apiDecoders = {
   ApiService: () => ApiService(),

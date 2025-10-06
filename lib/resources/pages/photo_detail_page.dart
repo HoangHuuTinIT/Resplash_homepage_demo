@@ -16,10 +16,10 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
   get init => () async {
     await widget.controller.fetchDetails(widget.data());
   };
-
   @override
   Widget view(BuildContext context) {
     final Photo? photo = widget.controller.photo;
+    double viewPhoto = 0;
     if (photo == null) {
       return Scaffold(
         appBar: AppBar(),
@@ -28,49 +28,85 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
     }
 
     return Scaffold(
+      extendBodyBehindAppBar: true, // ✅ Cho phép ảnh nền tràn qua AppBar
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: BackButton(color: Colors.black),
+        backgroundColor: Colors.transparent, // ✅ Làm nền AppBar trong suốt
+        elevation: 0, // ✅ Xóa bóng đổ
+        leading: const BackButton(color: Colors.white),
         actions: [
           IconButton(
-            icon: Icon(Icons.share_outlined, color: Colors.black),
+            icon: const Icon(Icons.open_in_browser, color: Colors.white),
             onPressed: () {},
-          )
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onPressed: () {},
+          ),
         ],
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Image.network(
-              photo.urls?.regular ?? "",
-              height: 400,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                if (wasSynchronouslyLoaded) return child;
-                return AnimatedOpacity(
-                  opacity: frame == null ? 0 : 1,
-                  duration: const Duration(seconds: 1),
-                  curve: Curves.easeOut,
-                  child: child,
-                );
-              },
+            Stack(
+              children: [
+                // ✅ Ảnh nền tràn luôn qua AppBar
+                Image.network(
+                  photo.urls?.regular ?? "",
+                  height: 400,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                    if (wasSynchronouslyLoaded) return child;
+                    return AnimatedOpacity(
+                      opacity: frame == null ? 0 : 1,
+                      duration: const Duration(seconds: 1),
+                      curve: Curves.easeOut,
+                      child: child,
+                    );
+                  },
+                ),
+
+                // Hiển thị vị trí (nếu có)
+                if (photo.location?.displayName != null)
+                  Positioned(
+                    bottom: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on, color: Colors.white, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            photo.location!.displayName!,
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
+
+            // Phần nội dung bên dưới ảnh
             Padding(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
               child: Column(
                 children: [
                   _buildUserInfo(context, photo),
-                  Divider(height: 40, thickness: 1),
+                  const Divider(height: 40, thickness: 1),
                   _buildAllInfo(context, photo),
-                  Divider(height: 40, thickness: 1),
-                  _buildPhotoStats(context, photo),
-                  SizedBox(height: 24),
+                  const Divider(height: 40, thickness: 1),
+                  _buildPhotoStats(context, photo, viewPhoto),
+                  const SizedBox(height: 24),
                   _buildTags(context, photo),
-                  SizedBox(height: 32),
+                  const SizedBox(height: 32),
                   _buildWallpaperButton(photo),
                 ],
               ),
@@ -79,6 +115,7 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
         ),
       ),
     );
+
   }
 
   Widget _buildUserInfo(BuildContext context, Photo photo) {
@@ -112,48 +149,56 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
     );
   }
 
-  Widget _buildAllInfo(BuildContext context, Photo photo) {
+  // SỬA ĐỔI: Sử dụng bố cục 3 hàng, 2 cột theo yêu cầu của bạn
+  Widget _buildAllInfo(BuildContext context, Photo photo ) {
     final exif = photo.exif;
     return Column(
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _buildStatItem("Camera", exif?.model ?? "N/A", align: CrossAxisAlignment.start)),
-            Expanded(child: _buildStatItem("Aperture", "f/${exif?.aperture ?? 'N/A'}", align: CrossAxisAlignment.start)),
-
+            Expanded(child: _buildStatItem("Camera", exif?.model ?? "Unknown", align: CrossAxisAlignment.start)),
+            Expanded(child: _buildStatItem("Aperture", "f/${exif?.aperture ?? 'Unknown'}", align: CrossAxisAlignment.start)),
           ],
         ),
         SizedBox(height: 16),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _buildStatItem("Focal Length", "${exif?.focalLength ?? 'N/A'}mm", align: CrossAxisAlignment.start)),
-            Expanded(child: _buildStatItem("Shutter Speed", "${exif?.exposureTime ?? 'N/A'}s", align: CrossAxisAlignment.start)),
+            Expanded(child: _buildStatItem("Focal Length", "${exif?.focalLength ?? 'Unknown'}mm", align: CrossAxisAlignment.start)),
+            Expanded(child: _buildStatItem("Shutter Speed", "${exif?.exposureTime ?? 'Unknown'}s", align: CrossAxisAlignment.start)),
           ],
         ),
         SizedBox(height: 16),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _buildStatItem("ISO", (exif?.iso ?? 0).toString(), align: CrossAxisAlignment.start)),
-            Expanded(child: _buildStatItem("Dimensions", "${photo.width ?? ''}x${photo.height ?? ''}", align: CrossAxisAlignment.start)),
+            Expanded(child: _buildStatItem("ISO", (exif?.iso ?? 'Unknown').toString(), align: CrossAxisAlignment.start)),
+            Expanded(child: _buildStatItem("Dimensions", "${photo.width ?? 'Unknown'}x${photo.height ?? ''}", align: CrossAxisAlignment.start)),
           ],
         )
       ],
     );
   }
 
-  Widget _buildPhotoStats(BuildContext context, Photo photo) {
+  Widget _buildPhotoStats(BuildContext context, Photo photo, double viewPhoto) {
+    String formatNumber(num? value) {
+      if (value == null) return "0";
+      return value < 1000
+          ? value.toStringAsFixed(0)
+          : "${(value / 1000).toStringAsFixed(1)}K";
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildStatItem("Views", (photo.views ?? 0).toString()),
-        _buildStatItem("Downloads", (photo.downloads ?? 0).toString()),
-        _buildStatItem("Likes", (photo.likes ?? 0).toString()),
+        _buildStatItem("Views", formatNumber(photo.views)),
+        _buildStatItem("Downloads", formatNumber(photo.downloads)),
+        _buildStatItem("Likes", formatNumber(photo.likes)),
       ],
     );
   }
+
 
   Widget _buildTags(BuildContext context, Photo photo) {
     if (photo.tags == null || photo.tags!.isEmpty) return SizedBox.shrink();
@@ -201,6 +246,8 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
       ],
     );
   }
+
+  // SỬA ĐỔI: Bọc nút bấm trong Align để đẩy sang phải
   Widget _buildWallpaperButton(Photo photo) {
     return Align(
       alignment: Alignment.centerRight,

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_app/app/controllers/home_controller.dart';
 import 'package:flutter_app/resources/widgets/safearea_widget.dart';
 import 'package:nylo_framework/nylo_framework.dart';
@@ -15,6 +16,8 @@ class _HomePageState extends NyPage<HomePage> {
   final RefreshController _refreshController =
   RefreshController(initialRefresh: false);
   final ScrollController _scrollController = ScrollController();
+  bool _showBottomNavBar = true;
+
   @override
   get init => () async {
     if (widget.controller.photos.isEmpty) {
@@ -36,7 +39,23 @@ class _HomePageState extends NyPage<HomePage> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.9) {
+    if (_scrollController.position.userScrollDirection ==
+        ScrollDirection.reverse) {
+      if (_showBottomNavBar) {
+        setState(() {
+          _showBottomNavBar = false;
+        });
+      }
+    } else {
+      if (!_showBottomNavBar) {
+        setState(() {
+          _showBottomNavBar = true;
+        });
+      }
+    }
+
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.9) {
       if (!widget.controller.isLoadingMore) {
         widget.controller.fetchMorePhotos().then((_) {
           if (mounted) {
@@ -75,11 +94,10 @@ class _HomePageState extends NyPage<HomePage> {
               itemCount: widget.controller.photos.length,
               itemBuilder: (context, index) {
                 final photo = widget.controller.photos[index];
-
-                final double aspectRatio = (photo.width != null && photo.height != null && photo.height! > 0)
+                final double aspectRatio =
+                (photo.width != null && photo.height != null && photo.height! > 0)
                     ? photo.width! / photo.height!
                     : 16 / 9;
-
                 return Padding(
                   padding:
                   const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -126,24 +144,37 @@ class _HomePageState extends NyPage<HomePage> {
             ),
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {},
-          backgroundColor: Colors.black,
-          child: Icon(Icons.add, color: Colors.white),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        bottomNavigationBar: BottomAppBar(
-          shape: CircularNotchedRectangle(),
-          notchMargin: 6.0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              IconButton(icon: Icon(Icons.menu), onPressed: () {}),
-              SizedBox(width: 48),
-              IconButton(icon: Icon(Icons.search), onPressed: () {}),
-            ],
+        floatingActionButton: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          height: _showBottomNavBar ? 56.0 : 0.0,
+          child: FloatingActionButton(
+            onPressed: () {},
+            backgroundColor: Colors.black,
+            shape: const CircleBorder(), // ✅ đảm bảo nút tròn tuyệt đối
+            elevation: _showBottomNavBar ? 6.0 : 0.0,
+            child: const Icon(Icons.add, color: Colors.white),
           ),
         ),
+
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        bottomNavigationBar: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          height: _showBottomNavBar ? 60.0 : 0.0,
+          child: BottomAppBar(
+            shape: const CircularNotchedRectangle(),
+            notchMargin: 6.0,
+            child: Row(
+              children: [
+                IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
+                const Spacer(),
+                IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+                IconButton(icon: const Icon(Icons.sort), onPressed: () {}),
+              ],
+            ),
+          ),
+        ),
+
+
       ),
     );
   }
