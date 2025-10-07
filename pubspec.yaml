@@ -26,6 +26,7 @@ dependencies:
   flutter_local_notifications: ^19.4.2
   font_awesome_flutter: ^10.10.0
   scaffold_ui: ^1.2.9
+
   flutter:
     sdk: flutter
   flutter_localizations:

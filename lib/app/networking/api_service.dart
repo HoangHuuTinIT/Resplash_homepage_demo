@@ -30,7 +30,7 @@ class ApiService extends NyApiService {
         },
       ),
       cacheKey: "photos_page_$page",
-      cacheDuration: Duration(hours: 1),
+      cacheDuration: Duration(minutes: 4),
     );
   }
 
@@ -43,7 +43,7 @@ class ApiService extends NyApiService {
         },
       ),
       cacheKey: "photo_details_$photoId",
-      cacheDuration: Duration(hours: 1),
+      cacheDuration: Duration(minutes: 4),
     );
   }
 }
