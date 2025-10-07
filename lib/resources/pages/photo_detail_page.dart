@@ -1,7 +1,9 @@
+// lib/resources/pages/photo_detail_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_app/app/controllers/photo_detail_page_controller.dart';
 import 'package:flutter_app/app/models/photo.dart';
-import 'package:flutter_app/resources/widgets/photo_info_section.dart'; // ✅ IMPORT WIDGET MỚI
+import 'package:flutter_app/resources/widgets/photo_info_section.dart';
 import 'package:nylo_framework/nylo_framework.dart';
 
 class PhotoDetailPage extends NyStatefulWidget<PhotoDetailPageController> {
@@ -11,24 +13,15 @@ class PhotoDetailPage extends NyStatefulWidget<PhotoDetailPageController> {
 }
 
 class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
-  // Bỏ hàm init đi, chúng ta không cần nó nữa
-  bool _detailsLoaded = false;
+
   @override
   get init => () {
-    // Thao tác này chỉ chạy 1 lần duy nhất khi page được khởi tạo.
     widget.controller.setupInitial(widget.data());
   };
+
   @override
   Widget view(BuildContext context) {
-
-    final Photo? photo = widget.controller.photo;
-
-    if (photo == null) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: Center(child: Text("Đang tải dữ liệu...")),
-      );
-    }
+    final Photo initialPhoto = widget.controller.photo!;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -52,73 +45,53 @@ class _PhotoDetailPageState extends NyPage<PhotoDetailPage> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // PHẦN GIAO DIỆN TĨNH (SẼ KHÔNG BỊ "CHỚP" LẠI)
             Stack(
               children: [
+                // PHẦN TĨNH: HÌNH ẢNH (KHÔNG BAO GIỜ REBUILD)
                 Image.network(
-                  photo.urls?.regular ?? "",
+                  initialPhoto.urls?.regular ?? "",
                   height: 400,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                    if (wasSynchronouslyLoaded) return child;
-                    return AnimatedOpacity(
-                      opacity: frame == null ? 0 : 1,
-                      duration: const Duration(seconds: 1),
-                      curve: Curves.easeOut,
-                      child: child,
+                ),
+
+                // ✅ PHẦN ĐỘNG: LOCATION (CHỈ REBUILD KHI CÓ DỮ LIỆU)
+                ValueListenableBuilder<Photo?>(
+                  valueListenable: widget.controller.photoNotifier,
+                  builder: (context, photo, child) {
+                    // Chỉ hiển thị khi có dữ liệu location
+                    if (photo?.location?.country == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return Positioned(
+                      bottom: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.location_on, color: Colors.white, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              photo!.location!.country!,
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   },
-                ),
-                ValueListenableBuilder<Photo?>(
-                    valueListenable: widget.controller.photoNotifier,
-                    builder: (context, updatedPhoto, child) {
-                      // Lấy photo mới nhất từ controller để đảm bảo có thông tin location
-                      final currentPhoto = updatedPhoto ?? photo;
-                      if (currentPhoto.location?.displayName == null) {
-                        return SizedBox.shrink();
-                      }
-
-                      return Positioned(
-                        bottom: 12,
-                        left: 12,
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 400),
-                          opacity: _detailsLoaded ? 1.0 : 0.0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.location_on, color: Colors.white, size: 14),
-                                const SizedBox(width: 4),
-                                Text(
-                                  currentPhoto.location!.displayName!,
-                                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }
                 ),
               ],
             ),
 
-            // PHẦN GIAO DIỆN ĐỘNG (SẼ TỰ QUẢN LÝ TRẠNG THÁI VÀ ANIMATION)
+            // TOÀN BỘ THÔNG TIN CHI TIẾT CÒN LẠI
             PhotoInfoSection(
               controller: widget.controller,
-              onDetailsLoaded: () {
-                if(mounted) {
-                  setState(() {
-                    _detailsLoaded = true;
-                  });
-                }
-              },
             ),
           ],
         ),

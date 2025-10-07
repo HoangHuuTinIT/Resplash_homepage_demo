@@ -29,8 +29,8 @@ class ApiService extends NyApiService {
           "per_page": perPage,
         },
       ),
-      cacheKey: "photos_page_$page",
-      cacheDuration: Duration(minutes: 4),
+      // cacheKey: "photos_page_$page",
+      // cacheDuration: Duration(minutes: 4),
     );
   }
 
@@ -42,8 +42,8 @@ class ApiService extends NyApiService {
           "client_id": getEnv('UNSPLASH_ACCESS_KEY'),
         },
       ),
-      cacheKey: "photo_details_$photoId",
-      cacheDuration: Duration(minutes: 4),
+      // cacheKey: "photo_details_$photoId",
+      // cacheDuration: Duration(minutes: 4),
     );
   }
 }

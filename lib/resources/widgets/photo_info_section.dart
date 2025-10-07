@@ -1,3 +1,5 @@
+// lib/resources/widgets/photo_info_section.dart
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_app/app/controllers/photo_detail_page_controller.dart';
@@ -7,68 +9,77 @@ import 'package:url_launcher/url_launcher.dart';
 
 class PhotoInfoSection extends StatefulWidget {
   final PhotoDetailPageController controller;
-  final VoidCallback onDetailsLoaded;
-  const PhotoInfoSection({Key? key, required this.controller,required this.onDetailsLoaded, }) : super(key: key);
+
+  const PhotoInfoSection({Key? key, required this.controller}) : super(key: key);
 
   @override
   _PhotoInfoSectionState createState() => _PhotoInfoSectionState();
 }
 
 class _PhotoInfoSectionState extends State<PhotoInfoSection> {
-  bool _detailsLoaded = false;
-
   @override
   void initState() {
     super.initState();
-    _fetchDetails();
-  }
-
-  void _fetchDetails() async {
-    await widget.controller.fetchFullDetails();
-    if (mounted) {
-      setState(() {
-        _detailsLoaded = true;
-      });
-      widget.onDetailsLoaded();
-    }
+    widget.controller.fetchFullDetails();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Luôn lấy photo object mới nhất từ controller
-    final Photo photo = widget.controller.photo!;
+    return ValueListenableBuilder<Photo?>(
+      valueListenable: widget.controller.photoNotifier,
+      builder: (context, photo, child) {
+        if (photo == null) return SizedBox.shrink();
 
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOutCubic,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-        // Nếu chưa load xong details, hiện loader. Ngược lại, hiện toàn bộ thông tin.
-        child: !_detailsLoaded
-            ? Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: CupertinoActivityIndicator(radius: 14),
-          ),
-        )
-            : Column(
-          children: [
-            _buildUserInfo(context, photo),
-            const Divider(height: 40, thickness: 1),
-            _buildAllInfo(context, photo),
-            const Divider(height: 40, thickness: 1),
-            _buildPhotoStats(context, photo),
-            const SizedBox(height: 24),
-            _buildTags(context, photo),
-            const SizedBox(height: 32),
-            _buildWallpaperButton(photo),
-          ],
-        ),
-      ),
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 600),
+          // ✅ THAY ĐỔI transitionBuilder TẠI ĐÂY
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return SizeTransition(
+              sizeFactor: animation, // animation sẽ điều khiển kích thước
+              axis: Axis.vertical, // Animation theo chiều dọc
+              axisAlignment: -1.0, // Căn trên cùng (mở từ trên xuống)
+              child: FadeTransition( // Kết hợp thêm hiệu ứng mờ dần để mượt mà hơn
+                opacity: animation,
+                child: child,
+              ),
+            );
+          },
+          child: _buildContent(photo),
+        );
+      },
     );
   }
 
-  // TẤT CẢ CÁC HÀM _build... ĐƯỢC CHUYỂN TỪ PHOTO_DETAIL_PAGE SANG ĐÂY
+  // Phần còn lại của file giữ nguyên không đổi...
+  Widget _buildContent(Photo photo) {
+    if (photo.exif == null) {
+      return Container(
+        key: const ValueKey('loading_indicator'),
+        padding: const EdgeInsets.all(32.0),
+        child: const Center(
+          child: CupertinoActivityIndicator(radius: 14),
+        ),
+      );
+    }
+
+    return Padding(
+      key: const ValueKey('photo_content'),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+      child: Column(
+        children: [
+          _buildUserInfo(context, photo),
+          const Divider(height: 40, thickness: 1),
+          _buildAllInfo(context, photo),
+          const Divider(height: 40, thickness: 1),
+          _buildPhotoStats(context, photo),
+          const SizedBox(height: 24),
+          _buildTags(context, photo),
+          const SizedBox(height: 32),
+          _buildWallpaperButton(photo),
+        ],
+      ),
+    );
+  }
 
   Widget _buildUserInfo(BuildContext context, Photo photo) {
     return Row(
@@ -128,21 +139,37 @@ class _PhotoInfoSectionState extends State<PhotoInfoSection> {
   }
 
   Widget _buildPhotoStats(BuildContext context, Photo photo) {
-    String formatNumber(num? value) {
-      if (value == null) return "0";
-      return value < 1000 ? value.toStringAsFixed(0) : "${(value / 1000).toStringAsFixed(1)}K";
-    }
+    // Sử dụng ValueListenableBuilder để lắng nghe trạng thái tải
+    return ValueListenableBuilder<bool>(
+      valueListenable: widget.controller.hasLoadedDetails,
+      builder: (context, hasLoaded, child) {
+        // Nếu chưa tải xong, hiển thị loading
+        if (!hasLoaded) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20.0),
+            child: Center(child: CupertinoActivityIndicator()),
+          );
+        }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildStatItem("Views", formatNumber(photo.views)),
-        _buildStatItem("Downloads", formatNumber(photo.downloads)),
-        _buildStatItem("Likes", formatNumber(photo.likes)),
-      ],
+        // Nếu đã tải xong, hiển thị các con số từ dữ liệu photo mới nhất
+        String formatNumber(num? value) {
+          if (value == null) return "0";
+          return value < 1000 ? value.toStringAsFixed(0) : "${(value / 1000).toStringAsFixed(1)}K";
+        }
+
+        // Dùng widget.controller.photo để đảm bảo lấy photo mới nhất sau khi API gọi xong
+        final latestPhoto = widget.controller.photo!;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildStatItem("Views", formatNumber(latestPhoto.views)),
+            _buildStatItem("Downloads", formatNumber(latestPhoto.downloads)),
+            _buildStatItem("Likes", formatNumber(latestPhoto.likes)),
+          ],
+        );
+      },
     );
   }
-
   Widget _buildTags(BuildContext context, Photo photo) {
     if (photo.tags == null || photo.tags!.isEmpty) return SizedBox.shrink();
     return Container(
@@ -190,9 +217,6 @@ class _PhotoInfoSectionState extends State<PhotoInfoSection> {
       child: ElevatedButton.icon(
         onPressed: () async {
           final Uri url = Uri.parse("https://unsplash.com/photos/${photo.id}");
-          // if (!await launchUrl(url)) {
-          //   showToastOops(description: 'Could not launch $url');
-          // }
         },
         icon: Icon(Icons.wallpaper, color: Colors.white),
         label: Text("SET AS WALLPAPER", style: TextStyle(color: Colors.white)),

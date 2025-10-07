@@ -7,7 +7,7 @@ import 'controller.dart';
 class PhotoDetailPageController extends Controller {
   // ✅ SỬ DỤNG VALUENOTIFIER ĐỂ THÔNG BÁO THAY ĐỔI
   final ValueNotifier<Photo?> photoNotifier = ValueNotifier(null);
-
+  final ValueNotifier<bool> hasLoadedDetails = ValueNotifier(false);
   // Vẫn giữ lại biến photo để truy cập tiện lợi
   Photo? get photo => photoNotifier.value;
   set photo(Photo? newPhoto) {
@@ -28,12 +28,15 @@ class PhotoDetailPageController extends Controller {
   Future<void> fetchFullDetails() async {
     if (photo == null || photo!.id == null) return;
 
-    Photo? fullDetailsPhoto =
-    await api<ApiService>((request) => request.fetchPhotoDetails(photo!.id!));
+    try {
+      Photo? fullDetailsPhoto = await api<ApiService>((request) => request.fetchPhotoDetails(photo!.id!));
 
-    if (fullDetailsPhoto != null) {
-      // ✅ Gán giá trị mới, việc này sẽ tự động thông báo cho các widget đang "lắng nghe"
-      photo = fullDetailsPhoto;
+      if (fullDetailsPhoto != null) {
+        photo = fullDetailsPhoto;
+      }
+    } finally {
+      // ✅ BẤT KỂ THÀNH CÔNG HAY THẤT BẠI, ĐÁNH DẤU LÀ ĐÃ TẢI XONG
+      hasLoadedDetails.value = true;
     }
   }
 }
