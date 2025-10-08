@@ -1,5 +1,6 @@
 import 'package:flutter_app/app/models/photo_exif.dart';
 import 'package:flutter_app/app/models/photo_urls.dart';
+import 'package:flutter_app/app/models/tag.dart';
 import 'package:flutter_app/app/models/user.dart';
 import 'package:nylo_framework/nylo_framework.dart';
 
@@ -7,7 +8,7 @@ import 'location.dart';
 
 class Photo extends Model {
   String? id;
-  String? description;
+  // String? description;
   PhotoUrls? urls;
   User? user;
   int? likes;
@@ -20,7 +21,7 @@ class Photo extends Model {
   Location? location;
   Photo(
       {this.id,
-        this.description,
+        // this.description,
         this.urls,
         this.user,
         this.width,
@@ -37,7 +38,7 @@ class Photo extends Model {
     id = data['id'];
     width = data['width'];
     height = data['height'];
-    description = data['description'];
+    // description = data['description'];
     likes = data['likes'];
     downloads = data['downloads'];
     views = data['views'];
@@ -64,7 +65,7 @@ class Photo extends Model {
     "id": id,
     "width": width,
     "height": height,
-    "description": description,
+    // "description": description,
     "likes": likes,
     "downloads": downloads,
     "views": views,
@@ -76,15 +77,5 @@ class Photo extends Model {
   };
 }
 
-class Tag extends Model {
-  String? title;
 
-  Tag({this.title});
 
-  Tag.fromJson(dynamic data) {
-    title = data['title'];
-  }
-
-  @override
-  toJson() => {"title": title};
-}
